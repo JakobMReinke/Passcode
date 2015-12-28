@@ -1,0 +1,137 @@
+//LEDs
+#define yellow A0
+#define red1 A1
+#define red2 A2
+#define red3 A3
+#define red4 A4
+#define red5 A5
+#define green 12
+
+//Speaker
+#define  c     3830    // 261 Hz 
+#define  d     3400    // 294 Hz 
+#define  e     3038    // 329 Hz 
+#define  f     2864    // 349 Hz 
+#define  g     2550    // 392 Hz 
+#define  a     2272    // 440 Hz 
+#define  b     2028    // 493 Hz 
+#define  C     1912    // 523 Hz
+#define  R     0
+
+//Speaker Setup
+int speakerOut = 11;
+
+void setup() {
+  //LED Setup
+ pinMode(yellow, OUTPUT);
+  pinMode(red1, OUTPUT);
+  pinMode(red2, OUTPUT);
+  pinMode(red3, OUTPUT);
+  pinMode(red4, OUTPUT);
+  pinMode(red5, OUTPUT);
+  pinMode(green, OUTPUT);
+  //Speaker Setup
+  pinMode(speakerOut, OUTPUT);
+}
+
+
+int melodyRight[] = {  c, d, e, f, g, a, b, C};
+int beatsRight[]  = { 16, 16, 16, 16, 16, 16, 16, 64}; 
+int melodyWrong[] = {  a, R, a, R, a, R, f, C, a, f, C, a};
+int beatsWrong[]  = { 64, 2, 64, 2, 64, 2, 64, 64, 64, 64, 64, 64}; 
+int MAX_COUNT_RIGHT = sizeof(melodyRight) / 2; // Melody length, for looping.
+int MAX_COUNT_WRONG = sizeof(melodyWrong) / 2; 
+
+//arrays for LEDs
+int arrayRight[6] = {red1, red2, red3, red4, red5, green};
+int arrayWrong[6] = {yellow, red5, red4, red3, red2, red1};
+
+
+void flashSingle(int LED, int flashTime)  { //Lets a single LED flash
+  digitalWrite(LED, HIGH);
+  delay(flashTime);
+  digitalWrite(LED, LOW);
+  delay(flashTime);
+}
+
+void flashArray(int SetOfLEDs[], int start, int flashTime) { //Lets multiple LEDs flash simultaneously
+  for (int i = start; i < 6; i = i + 1) {
+    int led = SetOfLEDs[i];
+    digitalWrite(led, HIGH);
+  }
+  delay(flashTime);
+  for (int i = start; i < 6; i = i + 1) {
+    int led = SetOfLEDs[i];
+    digitalWrite(led, LOW);
+  }
+  delay(flashTime);
+}
+
+//Music
+long tempo = 10000; // Set overall tempo
+int pause = 1000; // Set length of pause between notes
+int rest_count = 100; // Loop variable to increase Rest length
+
+// Initialize core variables
+int tone_ = 0;
+int beat = 0;
+long duration  = 0;
+
+// PLAY TONE  
+void playTone() {     // Pulse the speaker to play a tone for a particular duration
+  long elapsed_time = 0;
+  if (tone_ > 0) { // if this isn't a Rest beat, while the tone has 
+    //  played less long than 'duration', pulse speaker HIGH and LOW
+    while (elapsed_time < duration) {
+
+      digitalWrite(speakerOut,HIGH);
+      delayMicroseconds(tone_ / 2);
+
+      // DOWN
+      digitalWrite(speakerOut, LOW);
+      delayMicroseconds(tone_ / 2);
+
+      // Keep track of how long we pulsed
+      elapsed_time += (tone_);
+    } 
+  }
+  else { // Rest beat; loop times delay
+    for (int j = 0; j < rest_count; j++) { // See NOTE on rest_count
+      delayMicroseconds(duration);  
+    }                                
+  }                                 
+}
+
+void music(int melody[], int beats[], int MAX_COUNT) {
+for (int i=0; i<MAX_COUNT; i++) {
+    tone_ = melody[i];
+    beat = beats[i];
+
+    duration = beat * tempo; // Set up timing
+
+    playTone(); 
+    // A pause between notes...
+    delayMicroseconds(pause);
+  }
+}
+
+void CorrectLED(int LED, int start)  { //This gets plugged in for every correct response
+  flashArray(arrayRight, start, 500);
+  flashArray(arrayRight, start, 500);
+  flashArray(arrayRight, start, 500);
+  music(melodyRight, beatsRight, MAX_COUNT_RIGHT);
+  digitalWrite(LED, HIGH);
+  delay(5000);
+}
+
+void wrong()  { //This gets plugged in if the response is wrong
+  flashSingle(yellow, 200);
+  flashSingle(yellow, 200);
+  flashSingle(yellow, 200);
+  flashArray(arrayWrong, 0, 500);
+  flashArray(arrayWrong, 0, 500);
+  flashArray(arrayWrong, 0, 500);
+  music(melodyWrong, beatsWrong, MAX_COUNT_WRONG);
+  flashArray(arrayWrong, 0, 5000);
+  
+}
